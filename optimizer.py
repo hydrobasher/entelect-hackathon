@@ -282,4 +282,4 @@ if __name__ == "__main__":
     print(f"Tyre Degradation: {result['tyre_degradation']:.4f}")
     print(f"Score: {result['score']:.2f}")
 
-    write("lvl1.txt", level1)
+    write("lvl1.txt", strategy)

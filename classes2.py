@@ -20,7 +20,9 @@ class outSegmentCorner:
 
 class outPit:
     def __init__(self):
-        self.enter = False      
+        self.enter = False
+        self.tyre_change_set_id = 1
+        self.fuel_refuel_amount_l = 100   
 
 class outLap:
     def __init__(self, lap, level):
