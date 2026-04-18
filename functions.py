@@ -1,5 +1,7 @@
 import math
 
+from classes import *
+
 # Constants from specs
 GRAVITY = 9.8
 K_BASE_FUEL = 0.0005
@@ -17,9 +19,56 @@ BASE_FRICTIONS = {
     "Wet": 1.1,
 }
 
+class wheel:
+    def __init__(self, tyre, weather_condition, crawl_constant):
+        self.tyre = tyre
+        self.life_span = tyre.life_span
+        self.degredation = 0
+        self.weather_condition = weather_condition
+        self.crawl_constant = crawl_constant
 
-def max_corner_speed(typeFriction, radias, crawl_constant):
-    return math.sqrt(GRAVITY * radias * BASE_FRICTIONS[typeFriction]) + crawl_constant
+    def getWeatherMultiplier(self):
+        if self.weather_condition.condition == "dry":
+            return self.tyre.dry_friction_multiplier
+        elif self.weather_condition.condition == "cold":
+            return self.tyre.cold_friction_multiplier
+        elif self.weather_condition.condition == "light rain":
+            return self.tyre.light_rain_friction_multiplier
+        elif self.weather_condition.condition == "heavy rain":
+            return self.tyre.heavy_rain_friction_multiplier
+        else:
+            raise ValueError("Unknown weather condition multiplier")
+        
+    def getWeatherDegredation(self):
+        if self.weather_condition.condition == "dry":
+            return self.tyre.dry_degradation
+        elif self.weather_condition.condition == "cold":
+            return self.tyre.cold_degradation
+        elif self.weather_condition.condition == "light rain":
+            return self.tyre.light_rain_degradation
+        elif self.weather_condition.condition == "heavy rain":
+            return self.tyre.heavy_rain_degradation
+        else:
+            raise ValueError("Unknown weather condition degredation")
+
+    def friction(self):
+        return (BASE_FRICTIONS[self.tyre.name] - self.degredation) * self.getWeatherMultiplier()
+    
+    def degradeStraight(self, segmentLength):
+        self.degredation += K_STRAIGHT_DEG * segmentLength * self.getWeatherDegredation()
+
+    def degradeBraking(self, initSpeed, finalSpeed):
+        self.degredation += K_BRAKING_DEG * self.getWeatherDegredation() * ((initSpeed / 100) ** 2 - (finalSpeed / 100) ** 2)
+
+    def degradeCorner(self, radius, speed):
+        self.degredation += K_CORNER_DEG * self.getWeatherDegredation() * (speed ** 2 / radius)
+
+    def getMaxCornerSpeed(self, radius):
+        return math.sqrt(GRAVITY * radius * self.friction()) + self.crawl_constant
+
+
+def max_corner_speed(typeFriction, radias, crawl_constant, totalDegredation, weatherMultiplier):
+    return math.sqrt(GRAVITY * radias * tyre_friction(BASE_FRICTIONS[typeFriction], totalDegredation, weatherMultiplier)) + crawl_constant
 
 
 def total_straight_degredation(tyreDegredations, segmentLength, kStraight):

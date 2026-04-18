@@ -29,11 +29,3 @@ def write(filename, out_level_obj):
     output_dict = serialize(out_level_obj)
     with open(filename, 'w') as f:
         json.dump(output_dict, f, indent=4)
-
-level1 = read("1.txt")
-out_level1 = outLevel(level1)
-
-for s in out_level1.laps[0].segments:
-    print(f"  Segment {s.id} - Type: {s.type}, Target m/s: {s.target_ms if hasattr(s, 'target_ms') else 'N/A'}")
-
-write("out1.txt", out_level1)  
