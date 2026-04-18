@@ -71,4 +71,26 @@ class tyres:
         self.wet = wet
 
 class set:
+    def __init__(self, ids, compound):
+        self.ids = ids
+        self.compound = compound
     
+class sets:
+    def __init__(self, soft, medium, hard, intermediate, wet):
+        self.soft = soft
+        self.medium = medium
+        self.hard = hard
+        self.intermediate = intermediate
+        self.wet = wet
+
+class weather_condition:
+    def __init__(self, id, condition, duration, acceleration_multiplier, deceleration_multiplier):
+        self.id = id
+        self.condition = condition
+        self.duration = duration
+        self.acceleration_multiplier = acceleration_multiplier
+        self.deceleration_multiplier = deceleration_multiplier
+
+class weather:
+    def __init__(self, conditions):
+        self.conditions = conditions
