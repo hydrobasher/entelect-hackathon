@@ -32,10 +32,23 @@ class race:
         self.starting_weather_condition_id = starting_weather_condition_id
         self.time_reference = time_reference 
 
+    def print(self):
+        print(f"Race Name: {self.name}")
+        print(f"Laps: {self.laps}")
+        print(f"Base Pit Stop Time: {self.base_pit_stop_time} s")
+        print(f"Pit Tyre Swap Time: {self.pit_tyre_swap_time} s")     
+        print(f"Pit Refuel Rate: {self.pit_refuel_rate} l/s")
+        print(f"Corner Crash Penalty: {self.corner_crash_penalty} s")
+        print(f"Pit Exit Speed: {self.pit_exit_speed} m/s")
+        print(f"Fuel Soft Cap Limit: {self.fuel_soft_cap_limit} l")
+        print(f"Starting Weather Condition ID: {self.starting_weather_condition_id}")
+        print(f"Time Reference: {self.time_reference} s")
+
 class segment:
-    def __init__(self, id, type, length):
+    def __init__(self, id, type, length, radius=None):
         self.id = id
         self.type = type
+        self.radius = radius
         self.length = length
 
 class track:
@@ -47,7 +60,7 @@ class track:
         print(f"Track Name: {self.name}")
         print("Segments:")
         for segment in self.segments:
-            print(f"  ID: {segment.id}, Type: {segment.type}, Length: {segment.length} m")
+            print(f"  ID: {segment.id}, Type: {segment.type}, Length: {segment.length} m, Radius: {segment.radius if segment.radius is not None else 'N/A'} m")
 
 class tyre:
     def __init__(self, name, life_span, dry_friction_multiplier, cold_friction_multiplier, light_rain_friction_multiplier, heavy_rain_friction_multiplier, dry_degradation, cold_degradation, light_rain_degradation, heavy_rain_degradation):
@@ -61,6 +74,18 @@ class tyre:
         self.cold_degradation = cold_degradation
         self.light_rain_degradation = light_rain_degradation
         self.heavy_rain_degradation = heavy_rain_degradation
+
+    def print(self):
+        print(f"Tyre Compound: {self.name}")
+        print(f"  Life Span: {self.life_span} laps")
+        print(f"  Dry Friction Multiplier: {self.dry_friction_multiplier}")
+        print(f"  Cold Friction Multiplier: {self.cold_friction_multiplier}")
+        print(f"  Light Rain Friction Multiplier: {self.light_rain_friction_multiplier}")
+        print(f"  Heavy Rain Friction Multiplier: {self.heavy_rain_friction_multiplier}")
+        print(f"  Dry Degradation: {self.dry_degradation} per lap")
+        print(f"  Cold Degradation: {self.cold_degradation} per lap")
+        print(f"  Light Rain Degradation: {self.light_rain_degradation} per lap")
+        print(f"  Heavy Rain Degradation: {self.heavy_rain_degradation} per lap")
 
 class tyres:
     def __init__(self, soft, medium, hard, intermediate, wet):
@@ -91,6 +116,9 @@ class weather_condition:
         self.acceleration_multiplier = acceleration_multiplier
         self.deceleration_multiplier = deceleration_multiplier
 
+    def print(self):
+        print(f"ID: {self.id}, Condition: {self.condition}, Duration: {self.duration} s, Acceleration Multiplier: {self.acceleration_multiplier}, Deceleration Multiplier: {self.deceleration_multiplier}")
+
 class weather:
     def __init__(self, conditions):
         self.conditions = conditions
@@ -104,3 +132,27 @@ class level:
         self.tyres = tyres
         self.sets = sets
         self.weather = weather
+
+    def print(self):
+        print(f"Level Name: {self.levelname}")
+        print("\nCar:")
+        self.car.print()
+        print("\nRace:")
+        self.race.print()
+        print("\nTrack:")
+        self.track.print()
+        print("\nTyres:")
+        self.tyres.soft.print()
+        self.tyres.medium.print()
+        self.tyres.hard.print()
+        self.tyres.intermediate.print()
+        self.tyres.wet.print()
+        print("\nSets:")
+        print(f"  Soft: {self.sets.soft.ids}")
+        print(f"  Medium: {self.sets.medium.ids}")
+        print(f"  Hard: {self.sets.hard.ids}")
+        print(f"  Intermediate: {self.sets.intermediate.ids}")
+        print(f"  Wet: {self.sets.wet.ids}")
+        print("\nWeather Conditions:")
+        for condition in self.weather.conditions:
+            condition.print()
