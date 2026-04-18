@@ -65,7 +65,56 @@ class wheel:
 
     def getMaxCornerSpeed(self, radius):
         return math.sqrt(GRAVITY * radius * self.friction()) + self.crawl_constant
+    
+class vehicle:
+    def __init__(self, car):
+        self.car = car
+        self.speed = 0
+        self.fuel = car.initial_fuel
 
+    def accelerateOverStraight(self, length, v_limit=None):
+        # 1. Handle default v_limit
+        if v_limit is None:
+            v_limit = self.car.max_speed
+
+        # Using positive values for magnitudes to match your formula:
+        a_plus = self.car.accel
+        a_minus = -self.car.brake  # Convert braking magnitude to negative acceleration
+        v0 = self.speed
+        
+        # 2. Calculate the theoretical distance to start braking (d_1)
+        # Formula: d1 = (v_lim^2 - v0^2 - 2*a_minus*L) / (2 * (a_plus - a_minus))
+        numerator = (v_limit**2 - v0**2 - 2 * a_minus * length)
+        denominator = 2 * (a_plus - a_minus)
+        d_1 = numerator / denominator
+
+        # --- EDGE CASE: v_limit is so high we never need to brake ---
+        if d_1 >= length:
+            # Accelerate for the whole length
+            final_v_sq = v0**2 + 2 * a_plus * length
+            self.speed = min(math.sqrt(final_v_sq), self.car.max_speed)
+            return length # Still accelerating at the very end
+
+        # 3. Calculate the peak speed reached at d_1
+        v_peak_sq = v0**2 + 2 * a_plus * d_1
+        v_peak = math.sqrt(max(0, v_peak_sq)) # max(0...) prevents tiny precision errors
+
+        # 4. Handle hitting v_max ceiling
+        if v_peak > self.car.max_speed:
+            v_peak = self.car.max_speed
+            # Distance to reach v_max
+            d_accel = (v_peak**2 - v0**2) / (2 * a_plus)
+            # Distance required to brake from v_max to v_limit
+            d_brake_dist = (v_limit**2 - v_peak**2) / (2 * a_minus)
+            
+            self.speed = v_limit
+            # Cruising starts at d_accel, braking starts at (length - d_brake_dist)
+            return length - d_brake_dist 
+        
+        else:
+            # 5. Normal Accel -> Brake transition
+            self.speed = v_limit
+            return d_1
 
 def max_corner_speed(typeFriction, radias, crawl_constant, totalDegredation, weatherMultiplier):
     return math.sqrt(GRAVITY * radias * tyre_friction(BASE_FRICTIONS[typeFriction], totalDegredation, weatherMultiplier)) + crawl_constant

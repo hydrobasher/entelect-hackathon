@@ -9,7 +9,8 @@ outLvl = outLevel(lvl)
 
 speed = 0
 
-wheel = wheel(lvl.tyres.medium, lvl.weather.conditions[0].condition, lvl.car.crawl_constant)
+myWheel = wheel(lvl.tyres.medium, lvl.weather.conditions[0].condition, lvl.car.crawl_constant)
+myVehicle = vehicle(lvl.car)
 
 for lapNum, lap in enumerate(outLvl.laps):
     for segNum, seg in enumerate(lap.segments):
@@ -19,8 +20,10 @@ for lapNum, lap in enumerate(outLvl.laps):
             continue
 
         if nextSeg.type == "corner":
-            maxSpeed = wheel.getMaxCornerSpeed(nextSeg.radius)
+            maxSpeed = myWheel.getMaxCornerSpeed(nextSeg.radius)
             
-
+            L = myVehicle.accelerateOverStraight(lvl.track.segments[segNum].length, maxSpeed)
+            seg.target_ms = myVehicle.car.max_speed
+            seg.brake_start_m_before_next = L    
 
 write("output.txt", outLvl)
