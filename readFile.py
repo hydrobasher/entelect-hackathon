@@ -69,6 +69,3 @@ def read(filename):
 
     # 7. Final Level Object
     return level(r.name, c, r, t, all_tyres, all_sets, w_obj)
-
-temp = read("4.txt")
-temp.print()
