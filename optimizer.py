@@ -5,6 +5,7 @@ from classes import *
 from classes2 import *
 from functions import *
 from readFile import read
+from writeFile import write
 
 
 def load_level(filename):
@@ -271,12 +272,14 @@ if __name__ == "__main__":
         json.dump(strategy, f, indent=2)
 
     # Load parsed level objects for scoring
-    level = read("1.txt")
+    level1 = read("1.txt")
 
     # Compute score
-    result = compute_score(level, strategy)
+    result = compute_score(level1, strategy)
 
     print(f"Total Time: {result['total_time']:.2f} seconds")
     print(f"Total Fuel Used: {result['total_fuel_used']:.2f} liters")
     print(f"Tyre Degradation: {result['tyre_degradation']:.4f}")
     print(f"Score: {result['score']:.2f}")
+
+    write("lvl1.txt", level1)

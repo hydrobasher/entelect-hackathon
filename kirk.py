@@ -24,6 +24,8 @@ for lapNum, lap in enumerate(outLvl.laps):
             
             L = myVehicle.accelerateOverStraight(lvl.track.segments[segNum].length, maxSpeed)
             seg.target_ms = myVehicle.car.max_speed
-            seg.brake_start_m_before_next = L    
+            seg.brake_start_m_before_next = L 
+
+    lap.pit.enter = True
 
 write("output.txt", outLvl)
