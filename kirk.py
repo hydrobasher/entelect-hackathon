@@ -4,13 +4,23 @@ from functions import *
 from readFile import read
 from writeFile import write
 
-def kirk(levelNumber):
+def kirk(levelNumber, wheelTypeId):
     lvl = read(f"{levelNumber}.txt")
     outLvl = outLevel(lvl)
 
-    speed = 0
+    wheelType = None
+    if wheelTypeId == "soft":
+        wheelType = lvl.tyres.soft
+    elif wheelTypeId == "medium":
+        wheelType = lvl.tyres.medium
+    elif wheelTypeId == "hard":
+        wheelType = lvl.tyres.hard
+    elif wheelTypeId == "intermediate":
+        wheelType = lvl.tyres.intermediate
+    elif wheelTypeId == "wet":
+        wheelType = lvl.tyres.wet
 
-    myWheel = wheel(lvl.tyres.medium, lvl.weather.conditions[0].condition, lvl.car.crawl_constant)
+    myWheel = wheel(wheelType, lvl.weather.conditions[0].condition, lvl.car.crawl_constant)
     myVehicle = vehicle(lvl.car)
 
     for lapNum, lap in enumerate(outLvl.laps):
@@ -27,6 +37,6 @@ def kirk(levelNumber):
                 seg.target_ms = myVehicle.car.max_speed
                 seg.brake_start_m_before_next = L 
 
-        lap.pit.enter = True
+        # lap.pit.enter = True
 
-    write(f"lvl{levelNumber}.txt", outLvl)
+    write(f"lvl{levelNumber}-{wheelTypeId}.txt", outLvl)
