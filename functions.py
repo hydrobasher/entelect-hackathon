@@ -31,11 +31,11 @@ class wheel:
     def getWeatherMultiplier(self):
         if self.weather_condition == "dry":
             return self.tyre.dry_friction_multiplier
-        elif self.weather_condition.condition == "cold":
+        elif self.weather_condition == "cold":
             return self.tyre.cold_friction_multiplier
-        elif self.weather_condition.condition == "light rain":
+        elif self.weather_condition == "light rain":
             return self.tyre.light_rain_friction_multiplier
-        elif self.weather_condition.condition == "heavy rain":
+        elif self.weather_condition == "heavy rain":
             return self.tyre.heavy_rain_friction_multiplier
         else:
             raise ValueError("Unknown weather condition multiplier")
@@ -43,11 +43,11 @@ class wheel:
     def getWeatherDegredation(self):
         if self.weather_condition == "dry":
             return self.tyre.dry_degradation
-        elif self.weather_condition.condition == "cold":
+        elif self.weather_condition == "cold":
             return self.tyre.cold_degradation
-        elif self.weather_condition.condition == "light rain":
+        elif self.weather_condition == "light rain":
             return self.tyre.light_rain_degradation
-        elif self.weather_condition.condition == "heavy rain":
+        elif self.weather_condition == "heavy rain":
             return self.tyre.heavy_rain_degradation
         else:
             raise ValueError("Unknown weather condition degredation")
