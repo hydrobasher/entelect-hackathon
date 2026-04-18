@@ -94,3 +94,13 @@ class weather_condition:
 class weather:
     def __init__(self, conditions):
         self.conditions = conditions
+
+class level:
+    def __init__(self, levelname, car, race, track, tyres, sets, weather):
+        self.levelname = levelname
+        self.car = car
+        self.race = race
+        self.track = track
+        self.tyres = tyres
+        self.sets = sets
+        self.weather = weather
