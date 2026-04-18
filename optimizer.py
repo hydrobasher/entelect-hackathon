@@ -28,48 +28,112 @@ def generate_strategy(level_data):
     track = level_data["track"]["segments"]
     tyres = level_data["tyres"]["properties"]
 
-    # Choose soft tyre
+    # Race constraints
+    initial_fuel = car["initial_fuel_l"]
+    fuel_soft_cap = race.get("fuel_soft_cap_limit_l", 9999)
+
+    # Choose initial tyre (soft for now, but could be optimized)
     tyre_compound = "Soft"
     base_friction = 1.8  # soft
     friction_multiplier = tyres[tyre_compound]["dry_friction_multiplier"]
-    friction = base_friction * friction_multiplier
+    initial_friction = base_friction * friction_multiplier
     initial_tyre_id = 1  # soft
 
+    # Tyre degradation parameters (using dry_degradation from JSON)
+    tyre_degradation_rate = (
+        tyres[tyre_compound]["dry_degradation"] / 1000.0
+    )  # per meter
+
+    # Fuel usage parameters
+    K_BASE_FUEL = 0.001  # base fuel per meter
+    K_DRAG_FUEL = 0.00001  # drag-related fuel coefficient
+
+    # Estimate fuel per lap and tyre life
+    track_length = sum(seg["length_m"] for seg in track)
+
+    # Conservative speed factors to manage fuel and tyres
+    speed_factor = 0.95  # Don't always go at max speed to save fuel/tyres
+    max_lap_fuel = initial_fuel / laps * 1.1  # Allow 10% buffer per lap
+
     laps_list = []
+    current_fuel = initial_fuel
+    current_friction = initial_friction
+    tyre_life_remaining = 1.0  # 1.0 = new, 0.0 = worn out
+    min_tyre_life = 0.3  # Pit when tyre life drops below this
+
     for lap in range(1, laps + 1):
         segments = []
         current_speed = 0  # start of lap
+        lap_fuel_used = 0.0
+        need_pit = False
+
+        # Check if we need a pit stop for fuel or tyres
+        if lap > 1:
+            # Estimate if we'll run out of fuel or tyres
+            avg_fuel_per_lap = initial_fuel / laps
+            remaining_laps = laps - lap + 1
+            if current_fuel < avg_fuel_per_lap * remaining_laps * 0.8:
+                need_pit = True
+            if tyre_life_remaining < min_tyre_life:
+                need_pit = True
+
         for i, seg in enumerate(track):
             if seg["type"] == "corner":
                 radius = seg["radius_m"]
-                max_c = compute_max_corner(radius, friction, crawl)
-                entry_speed = min(current_speed, max_c)
-                current_speed = entry_speed  # constant
+                # Adjust max corner speed based on tyre degradation
+                degraded_friction = current_friction * (0.7 + 0.3 * tyre_life_remaining)
+                max_c = math.sqrt(degraded_friction * 9.8 * radius) + crawl
+                entry_speed = min(current_speed, max_c * speed_factor)
+                current_speed = entry_speed
+
+                # Estimate fuel used in corner (simplified)
+                corner_fuel = (
+                    K_BASE_FUEL * seg["length_m"]
+                    + K_DRAG_FUEL * entry_speed * seg["length_m"]
+                )
+                lap_fuel_used += corner_fuel
+
                 segments.append({"id": seg["id"], "type": "corner"})
+
             else:  # straight
                 length = seg["length_m"]
-                # next segment
                 next_i = (i + 1) % len(track)
                 next_seg = track[next_i]
+
                 if next_seg["type"] == "corner":
                     next_radius = next_seg["radius_m"]
-                    next_max_c = compute_max_corner(next_radius, friction, crawl)
-                    exit_speed = min(next_max_c, max_speed)
+                    degraded_friction = current_friction * (
+                        0.7 + 0.3 * tyre_life_remaining
+                    )
+                    next_max_c = (
+                        math.sqrt(degraded_friction * 9.8 * next_radius) + crawl
+                    )
+                    exit_speed = min(
+                        next_max_c * speed_factor, max_speed * speed_factor
+                    )
                 else:
-                    exit_speed = max_speed
+                    exit_speed = max_speed * speed_factor
 
-                # compute braking_dist from max_speed to exit_speed
-                if max_speed > exit_speed:
-                    braking_dist = (max_speed**2 - exit_speed**2) / (2 * brake)
+                # Compute braking distance
+                target_speed = max_speed * speed_factor
+                if target_speed > exit_speed:
+                    braking_dist = (target_speed**2 - exit_speed**2) / (2 * brake)
                 else:
                     braking_dist = 0
 
                 if braking_dist <= length:
-                    target = max_speed
+                    target = target_speed
                     brake_start = braking_dist
                 else:
                     target = math.sqrt(exit_speed**2 + 2 * brake * length)
                     brake_start = length
+
+                # Estimate fuel used on straight
+                avg_straight_speed = (current_speed + target) / 2
+                straight_fuel = (
+                    K_BASE_FUEL * length + K_DRAG_FUEL * avg_straight_speed * length
+                )
+                lap_fuel_used += straight_fuel
 
                 segments.append(
                     {
@@ -79,9 +143,32 @@ def generate_strategy(level_data):
                         "brake_start_m_before_next": round(brake_start, 2),
                     }
                 )
-                current_speed = exit_speed  # after braking
+                current_speed = exit_speed
 
-        laps_list.append({"lap": lap, "segments": segments, "pit": {"enter": False}})
+        # Update tyre life based on lap distance
+        tyre_life_remaining -= (track_length / 1000.0) * tyre_degradation_rate
+        tyre_life_remaining = max(0.0, tyre_life_remaining)
+
+        # Update fuel
+        current_fuel -= lap_fuel_used
+
+        # Determine if pit stop is needed
+        pit_enter = need_pit or (
+            lap < laps
+            and (
+                current_fuel < max_lap_fuel * 0.5 or tyre_life_remaining < min_tyre_life
+            )
+        )
+
+        laps_list.append(
+            {"lap": lap, "segments": segments, "pit": {"enter": pit_enter}}
+        )
+
+        # Reset if pitting
+        if pit_enter:
+            current_fuel = initial_fuel * 0.95  # Refuel to 95% to be safe
+            tyre_life_remaining = 1.0
+            current_friction = initial_friction
 
     return {"initial_tyre_id": initial_tyre_id, "laps": laps_list}
 
@@ -121,9 +208,11 @@ def compute_score(level, strategy):
     current_fuel = car.initial_fuel
     current_speed = 0.0
 
+    K_BASE_FUEL = 0.001
+    K_DRAG_FUEL = 0.00001
+
     num_laps = race.laps
     segments = track.segments
-
     for lap_idx, lap_strategy in enumerate(strategy["laps"]):
         lap_time = 0.0
 
@@ -272,14 +361,13 @@ if __name__ == "__main__":
         json.dump(strategy, f, indent=2)
 
     # Load parsed level objects for scoring
-    level1 = read("1.txt")
+    level = read("2.txt")
 
     # Compute score
-    result = compute_score(level1, strategy)
+    result = compute_score(level, strategy)
 
     print(f"Total Time: {result['total_time']:.2f} seconds")
     print(f"Total Fuel Used: {result['total_fuel_used']:.2f} liters")
     print(f"Tyre Degradation: {result['tyre_degradation']:.4f}")
     print(f"Score: {result['score']:.2f}")
-
-    write("lvl1.txt", strategy)
+    write("output80.txt", strategy)
