@@ -126,6 +126,9 @@ class vehicle:
             # 5. Normal Accel -> Brake transition
             self.speed = v_limit
             return d_1
+        
+    # def useFuel(self, length):
+
 
 def max_corner_speed(
     typeFriction, radias, crawl_constant, totalDegredation, weatherMultiplier
